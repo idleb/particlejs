@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Particle System</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="../dist/particlejs.umd.dev.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: gray;
+        }
+
+        #app {
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 8px;
+        }
+
+        .preview,
+        .controller {
+            flex: 1;
+        }
+
+        .preview {
+            width: 460px;
+        }
+
+        .controller {
+            min-width: 480px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            border: black 1px solid;
+            padding: 10px;
+            width: 240px;
+        }
+
+        .panel .title {
+            border-bottom: black 1px solid;
+            padding-bottom: 10px;
+        }
+
+        .panel .container {
+            margin-top: 10px;
+        }
+
+        .item {
+            display: flex;
+        }
+
+        .item .label {
+            margin-right: 4px;
+        }
+
+        .item .slider {
+            flex: 1;
+            padding: 4px;
+        }
+
+        .item .value {
+            width: 28px;
+            margin-left: 4px;
+        }
+
+        .config{
+            height: 740px;
+            overflow-y: auto;
+            background-color: white;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="preview">
+            <canvas id='cvs' width="500" height="500"></canvas>
+        </div>
+        <div class="controller">
+            <div class="panel">
+                <div class="title">Particles</div>
+                <div class="container">
+                    <h4>Emitter Type</h4>
+                    <div class="item">
+                        <div class="label">Emitter type</div>
+                        <select id="emitterType" class="selector">
+                            <option value="0">Gravity</option>
+                            <option value="1">Radial</option>
+                        </select>
+                    </div>
+                    <h4>Particle Configuation</h4>
+                    <div v-for="item in configuration" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="title">Particle Hehavior</div>
+                <div class="container">
+                    <h4>Gravity(Gravity Emitter)</h4>
+                    <div v-for="item in gravityEmitter" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                    <h4>Rotation(Radial Emitter)</h4>
+                    <div v-for="item in radialEmitter" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="title">Particle Color</div>
+                <div class="container">
+                    <h4>Start</h4>
+                    <div v-for="item in startColor" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                    <h4>Finish</h4>
+                    <div v-for="item in endColor" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="title">Particle Color Variance</div>
+                <div class="container">
+                    <h4>Start</h4>
+                    <div v-for="item in startColorVariance" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                    <h4>Finish</h4>
+                    <div v-for="item in endColorVariance" :key="item.name" class="item">
+                        <item-label v-bind:name="item.label"></item-label>
+                        <item-slider v-bind:name="item.name" v-bind:range="item.range"></item-slider>
+                        <item-value v-bind:value="item.value"></item-value>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <pre class="config">{{config}}</pre>
+    </div>
+
+    <script>
+        Vue.component(
+            'item-label',
+            {
+                props: ['name'],
+                template: '<div class="label">{{name}}</div>'
+            },
+        )
+        Vue.component(
+            'item-value',
+            {
+                props: ['value'],
+                template: '<div class="value">{{value}}</div>'
+            },
+        )
+        Vue.component(
+            'item-slider',
+            {
+                props: ['name', 'range'],
+                template: `
+                <div class="slider">
+                    <div v-bind:id="name">
+                        {{range}}
+                    </div>
+                </div>`
+            },
+        )
+
+        const configuration = [
+            { name: 'capacity', label: 'Max Particle', range: '1-1000', value: '500' },
+            { name: 'lifespan', label: 'Lifespan', range: '0-10', value: '2' },
+            { name: 'lifespanVariance', label: 'Lifespan Variance', range: '0-10', value: '2' },
+            { name: 'startSize', label: 'Start Size', range: '0-70', value: '70' },
+            { name: 'startSizeVariance', label: 'Start Size Variance', range: '0-70', value: '49' },
+            { name: 'endSize', label: 'End Size', range: '0-70', value: '10' },
+            { name: 'endSizeVariance', label: 'End Size Variance', range: '0-70', value: '5' },
+            { name: 'emitAngle', label: 'Emitter Angle', range: '0-360', value: '270' },
+            { name: 'emitAngleVariance', label: 'Angle Variance', range: '0-360', value: '0' },
+            { name: 'startRotation', label: 'Start Rot.', range: '0-360', value: '0' },
+            { name: 'startRotationVariance', label: 'Start Rot. Var.', range: '0-360', value: '0' },
+            { name: 'endRotation', label: 'End Rot.', range: '0-360', value: '0' },
+            { name: 'endRotationVariance', label: 'End Rot. Var.', range: '0-360', value: '0' },
+        ]
+
+        const gravityEmitter = [
+            { name: 'emitterXVariance', label: 'X Variance', range: '0-1000', value: '0' },
+            { name: 'emitterYVariance', label: 'Y Variance', range: '0-1000', value: '0' },
+            { name: 'speed', label: 'Speed', range: '0-500', value: '130' },
+            { name: 'speedVariance', label: 'Speed Variance', range: '0-500', value: '0' },
+            { name: 'gravityX', label: 'Gravity X', range: '0-500', value: '0' },
+            { name: 'gravityY', label: 'Grivity Y', range: '0-500', value: '0' },
+            { name: 'tangentialAcceleration', label: 'Tan. Acc.', range: '0-500', value: '0' },
+            { name: 'tangentialAccelerationVariance', label: 'Tan. Acc. Var', range: '0-500', value: '0' },
+            { name: 'radialAcceleration', label: 'Rad. Acc.', range: '0-500', value: '0' },
+            { name: 'radialAccelerationVariance', label: 'Rad. Acc. Var.', range: '0-500', value: '0' },
+        ]
+
+        const radialEmitter = [
+            { name: 'maxRadius', label: 'Max Radius', range: '0-500', value: '100' },
+            { name: 'maxRadiusVariance', label: 'Max Rad Variance', range: '0-500', value: '0' },
+            { name: 'minRadius', label: 'Min Radius', range: '0-500', value: '0' },
+            { name: 'minRadiusVariance', label: 'Min Rad Variance', range: '0-500', value: '0' },
+            { name: 'rotatePerSecond', label: 'Deg/Sec', range: '0-500', value: '0' },
+            { name: 'rotatePerSecondVariance', label: 'Deg/Sec Var.', range: '0-500', value: '0' },
+        ]
+
+        const startColor = [
+            { name: 'startColor.red', label: 'R', range: '0-255', value: '255' },
+            { name: 'startColor.green', label: 'G', range: '0-255', value: '76' },
+            { name: 'startColor.blue', label: 'B', range: '0-255', value: '0' },
+            { name: 'startColor.alpha', label: 'A', range: '0-1', value: '0.6' },
+        ]
+
+        const endColor = [
+            { name: 'endColor.red', label: 'R', range: '0-255', value: '255' },
+            { name: 'endColor.green', label: 'G', range: '0-255', value: '76' },
+            { name: 'endColor.blue', label: 'B', range: '0-255', value: '0' },
+            { name: 'endColor.alpha', label: 'A', range: '0-1', value: '0' },
+        ]
+
+        const startColorVariance = [
+            { name: 'startColorVariance.red', label: 'R', range: '0-255', value: '0' },
+            { name: 'startColorVariance.green', label: 'G', range: '0-255', value: '0' },
+            { name: 'startColorVariance.blue', label: 'B', range: '0-255', value: '0' },
+            { name: 'startColorVariance.alpha', label: 'A', range: '0-1', value: '0' },
+        ]
+
+        const endColorVariance = [
+            { name: 'endColorVariance.red', label: 'R', range: '0-255', value: '0' },
+            { name: 'endColorVariance.green', label: 'G', range: '0-255', value: '0' },
+            { name: 'endColorVariance.blue', label: 'B', range: '0-255', value: '0' },
+            { name: 'endColorVariance.alpha', label: 'A', range: '0-1', value: '0' },
+        ]
+        let config = {
+            "texture": "texture.png",
+            "sourcePosition": {
+                "x": "300.00",
+                "y": "300.00"
+            },
+            "sourcePositionVariance": {
+                "x": "0.00",
+                "y": "0.00"
+            },
+            "gravity": {
+                "x": "0.00",
+                "y": "0.00"
+            },
+            "duration": "-1.00",
+            "blendFuncSource": "0",
+        }
+        const panels = [
+            configuration,
+            gravityEmitter,
+            radialEmitter,
+            startColor,
+            endColor,
+            startColorVariance,
+            endColorVariance,
+        ]
+        panels.forEach(function (panel) {
+            panel.forEach(function (item) {
+                if (/[X|Y]$/.test(item.name)) {
+                    const name = item.name.slice(0, -1)
+                    if (config[name]) {
+                        config[name][item.name.slice(-1).toLocaleLowerCase()] = item.value
+                    } else {
+                        config[name] = { [item.name.slice(-1).toLocaleLowerCase()]: item.value }
+                    }
+                } else if (/\.(red|green|blue|alpha)$/.test(item.name)) {
+                    const names = item.name.split('.')
+                    if (config[names[0]]) {
+                        config[names[0]][names[1]] = item.value
+                    } else {
+                        console.log(item.name);
+                        config[names[0]] = { [names[1]]: item.value }
+                    }
+                } else {
+                    config[item.name] = item.value
+                }
+            })
+        })
+        const { CustomSystem } = ParticleJs
+
+        const vm = new Vue({
+            el: '#app',
+            data: {
+                configuration,
+                gravityEmitter,
+                radialEmitter,
+                startColor,
+                endColor,
+                startColorVariance,
+                endColorVariance,
+                config,
+            },
+            methods: {
+                getConfig: function () {
+
+                }
+            },
+            mounted: function () {
+                const $vm = this
+                const ps = new CustomSystem(document.getElementById('cvs'), this.config)
+                ps.emitterX = 250;
+                ps.emitterY = 320;
+                ps.start()
+
+                $(".container .slider > div").each(function () {
+                    let ranges = $(this).text().split('-')
+                    $(this).empty().slider({
+                        value: parseFloat($(this).parent().parent().find('.value').text()),
+                        min: parseInt(ranges[0]),
+                        max: parseInt(ranges[1]),
+                        range: "min",
+                        animate: true,
+                        step: $(this).attr('id').indexOf('.alpha') > -1 ? 0.1 : 1
+                    });
+
+                });
+                $(".container .slider > div").on("slide", function (e, ui) {
+                    $(this).parent().parent().find('.value').text(ui.value)
+                });
+                $(".container .slider > div").on("slidechange", function (e, ui) {
+                    const id = e.target.id
+                    const path = id.split('.')
+                    if (path.length > 1) {
+                        const oldValues = ps[path[0]]
+                        updateConfig(path[0], Object.assign({}, oldValues, { [path[1]]: ui.value }))
+                    } else {
+                        updateConfig(e.target.id, ui.value)
+                    }
+                });
+                $(".container .selector").on("change", function (e) {
+                    updateConfig(e.target.id, e.target.value)
+                });
+                function updateConfig(key, value) {
+                    if (typeof ps[key] !== 'undefined') {
+                        ps[key] = value
+                        console.log($vm);
+                        $vm.config[key] = value
+                        console.log('change ' + key + ':');
+                        console.log(value);
+                    } else {
+                        console.error('not found property: ' + key);
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
